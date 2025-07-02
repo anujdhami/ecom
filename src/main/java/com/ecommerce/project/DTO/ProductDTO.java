@@ -22,4 +22,5 @@ public class ProductDTO {
     private double specialPrice;
     private double discount;
     Category category;
+    private String imageName;
 }

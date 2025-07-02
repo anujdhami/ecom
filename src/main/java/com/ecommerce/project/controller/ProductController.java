@@ -6,12 +6,18 @@ import com.ecommerce.project.config.AppConstants;
 import com.ecommerce.project.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 import static com.ecommerce.project.config.AppConstants.SORT_BY;
 import static com.ecommerce.project.config.AppConstants.SORT_ORDER;
+
 
 @RestController
 @RequestMapping("/api")
@@ -65,5 +71,19 @@ public class ProductController {
     public ResponseEntity<ProductDTO> deleteProduct(@PathVariable(name="productId") Long id){
         ProductDTO productDTO= productService.deleteProducts(id);
         return ResponseEntity.ok(productDTO);
+    }
+
+    @PutMapping("/products/{productId}/image")
+    public ResponseEntity<ProductDTO> updateProductImage(@PathVariable(name = "productId") Long id,@RequestParam(name = "image") MultipartFile multiPartFile){
+        ProductDTO productDTO= productService.updateProductImage(id, multiPartFile);
+        return ResponseEntity.ok(productDTO);
+    }
+
+    @GetMapping("/products/{productId}/image")
+    public ResponseEntity<byte[]> downloadImage(@PathVariable(name = "productId")Long id) throws IOException {
+        byte[] bytes = productService.downloadImage(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + "Image" + "\"").body(bytes);
     }
 }

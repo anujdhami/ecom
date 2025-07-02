@@ -10,13 +10,21 @@ import com.ecommerce.project.repository.ProductRepository;
 import com.ecommerce.project.service.ProductService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -29,6 +37,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     ModelMapper modelMapper;
+
+    @Value("${spring.path}")
+    private String path;
 
     @Override
     public ProductDTO createProduct(Long id, ProductDTO productDTO) {
@@ -104,4 +115,54 @@ public class ProductServiceImpl implements ProductService {
         productRepository.deleteById(id);
         return modelMapper.map(product,ProductDTO.class);
     }
+
+    @Override
+    public ProductDTO updateProductImage(Long id, MultipartFile multiPartFile) {
+        Product product = productRepository.findById(id).orElseThrow(() -> new DataNotFoundException("Data not found"));
+        String imageName= null;
+        try {
+            imageName = uploadImageName(multiPartFile);
+        } catch (IOException e) {
+            throw new RuntimeException("Error occur while saving image");
+        }
+        product.setImageName(imageName);
+        productRepository.save(product);
+        return modelMapper.map(product,ProductDTO.class);
+    }
+
+    @Override
+    public byte[] downloadImage(Long id) {
+        Product product = productRepository.findById(id).orElseThrow(() -> new DataNotFoundException("Data not found"));
+        try {
+            return getFileData(product).readAllBytes();
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("Error occur while downloading file");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private InputStream getFileData(Product product) throws FileNotFoundException {
+        String filePath= path+File.separator+product.getImageName();
+        File file= new File(filePath);
+        if(!file.exists()){
+            throw new DataNotFoundException("Data not found");
+        }
+        FileInputStream inputStream= new FileInputStream(file);
+        return inputStream;
+    }
+
+    private String uploadImageName(MultipartFile multiPartFile) throws IOException {
+        File file= new File(path);
+        if(!file.exists()){
+            file.mkdir();
+        }
+        String fileNewName= UUID.randomUUID().toString()+ multiPartFile.getOriginalFilename()
+                .substring(multiPartFile.getOriginalFilename().lastIndexOf('.'));
+        Path pathFile= Paths.get(path+File.separator+fileNewName);
+            Files.copy(multiPartFile.getInputStream(),pathFile, StandardCopyOption.REPLACE_EXISTING);
+        return fileNewName;
+    }
+
+
 }
