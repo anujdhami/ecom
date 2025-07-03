@@ -12,6 +12,7 @@ import lombok.*;
 public class ProductDTO {
     private Long id;
     @NotBlank(message = "Name cannot be empty")
+    @Size(min = 3)
     private String productName;
     @Size(min = 3,max = 580)
     private String description;
