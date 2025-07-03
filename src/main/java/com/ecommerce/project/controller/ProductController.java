@@ -74,7 +74,13 @@ public class ProductController {
     }
 
     @PutMapping("/products/{productId}/image")
-    public ResponseEntity<ProductDTO> updateProductImage(@PathVariable(name = "productId") Long id,@RequestParam(name = "image") MultipartFile multiPartFile){
+    public ResponseEntity<?> updateProductImage(@PathVariable(name = "productId") Long id,
+                                                         @RequestParam(name = "image") MultipartFile multiPartFile){
+        if (multiPartFile == null || multiPartFile.isEmpty()) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("Please select a non-empty file to upload");
+        }
         ProductDTO productDTO= productService.updateProductImage(id, multiPartFile);
         return ResponseEntity.ok(productDTO);
     }
